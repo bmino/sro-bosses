@@ -1,0 +1,19 @@
+# dependencies (bun install)
+node_modules
+
+# IntelliJ based IDEs
+.idea
+
+# Finder (MacOS) folder config
+.DS_Store
+
+# dotenv environment variable files
+.env*
+!.env.example
+
+# output
+out
+dist
+*.tgz
+
+data/DEATHS.json
