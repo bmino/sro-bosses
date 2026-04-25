@@ -14,3 +14,4 @@ helm-charts
 .idea
 coverage*
 .DS_Store
+data/

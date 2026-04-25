@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import {BOSS_CONFIG, type BossName} from '../data/eventConfig.ts'
+import {BOSS_CONFIG, type BossName} from '../config/eventConfig.ts'
 import {HOUR, MINUTE, SECOND} from '@/Constants.ts'
 
 const FRESH_DEATH_DURATION = 4 * HOUR;

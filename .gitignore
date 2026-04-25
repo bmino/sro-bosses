@@ -16,4 +16,4 @@ out
 dist
 *.tgz
 
-data/DEATHS.json
+data/
