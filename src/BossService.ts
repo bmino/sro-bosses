@@ -121,24 +121,25 @@ function parseCrawledText(crawledText: string): BossDeath | null {
     return null;
   }
 
-  let msSinceDeath = 0;
+  // Assume a small latency
+  let msSinceDeath = 30 * SECOND;
 
   switch (timeUnit) {
     case 'second':
     case 'seconds':
     case 'sec':
     case 'secs':
-      msSinceDeath = Number.parseInt(timeQuantityString, 10) * SECOND;
+      msSinceDeath += Number.parseInt(timeQuantityString, 10) * SECOND;
       break;
     case 'minute':
     case 'minutes':
     case 'min':
     case 'mins':
-      msSinceDeath = Number.parseInt(timeQuantityString, 10) * MINUTE;
+      msSinceDeath += Number.parseInt(timeQuantityString, 10) * MINUTE;
       break;
     case 'hour':
     case 'hours':
-      msSinceDeath = Number.parseInt(timeQuantityString, 10) * HOUR;
+      msSinceDeath += Number.parseInt(timeQuantityString, 10) * HOUR;
       break;
   }
 
