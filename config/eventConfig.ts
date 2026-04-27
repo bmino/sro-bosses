@@ -12,12 +12,21 @@ const SAT = 6;
 
 export const SCHEDULE_TZ_OFFSET = 3 * HOUR;
 
+export enum Reward {
+  GC = 'Gold Coin',
+  SC = 'Silver Coin',
+  BC = 'Bronze Coin',
+  LGC = 'Legends Gold Coin',
+  LSC = 'Legends Silver Coin',
+}
+
 interface EventConfig {
   times: string[];
   days: number[];
 }
 
-export const EVENT_CONFIG = {
+const defineEvents = <K extends string>(config: Record<K, EventConfig>) => config;
+export const EVENT_CONFIG = defineEvents({
   'Battle Arena (Flag)':       { times: ['12:00', '20:00'],                                       days: [SUN, MON, TUE, WED, THUR, FRI, SAT] },
   'Battle Arena (Score)':      { times: ['04:00', '08:00', '16:00'],                              days: [SUN, MON, TUE, WED, THUR, FRI, SAT] },
   'Beakyung The White Viper':  { times: ['21:30'],                                                days: [FRI] },
@@ -33,54 +42,47 @@ export const EVENT_CONFIG = {
   'The Roc':                   { times: ['21:30'],                                                days: [SAT] },
   'Tower Defense':             { times: ['17:30'],                                                days: [SUN, FRI, SAT] },
   'War of Leagues':            { times: ['19:30'],                                                days: [SUN, MON, TUE, WED, THUR, FRI, SAT] },
-} satisfies Record<string, EventConfig>;
-
+});
 export type EventName = keyof typeof EVENT_CONFIG;
 
-export enum REWARD {
-  GOLD_COIN,
-  SILVER_COIN,
-  BRONZE_COIN,
-  LEGENDS_GOLD_COIN,
-  LEGENDS_SILVER_COIN,
-}
 
 export interface BossConfig {
   respawn: number | undefined;
   days: number[];
   schedule: string[];
-  rewards: REWARD[];
+  rewards: Reward[];
 }
 
-export const BOSS_CONFIG = {
-  'Ancient Librarian':                 { respawn:  8.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Desert Beast [INT]':                { respawn:  9.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Desert Beast [STR]':                { respawn:  9.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Gnome Earth Element [STR]':         { respawn:  6.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Hew Snake General [STR]':           { respawn:  7.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Jung Snake General [INT]':          { respawn:  7.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Ki Snake General [INT]':            { respawn:  7.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Lost Pharaoh':                      { respawn:  8.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Poison Frog':                       { respawn: 12.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Poison Spider':                     { respawn:  6.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Salamander Fire Element [STR]':     { respawn:  6.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Salt Desert Demon':                 { respawn: 10.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Sand Monster [INT]':                { respawn:  6.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Sand Monster [STR]':                { respawn:  6.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'SoSo The Black Viper':              { respawn:  7.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'SoSo The Black Viper [INT]':        { respawn:  7.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'SoSo The Black Viper [STR]':        { respawn:  7.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Sphinx (INT)':                      { respawn:  9.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Sphinx (STR)':                      { respawn:  9.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Sylph Wind Element [INT]':          { respawn:  6.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Undine Water Element[INT]':         { respawn:  6.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Yul Snake General [STR]':           { respawn:  7.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [REWARD.SILVER_COIN, REWARD.BRONZE_COIN, REWARD.LEGENDS_SILVER_COIN] },
-  'Selket':                            { respawn:   undefined, days: [MON, TUE, WED, THUR, FRI, SAT],      schedule: ['06:30', '12:30', '18:30'],            rewards: [REWARD.GOLD_COIN, REWARD.SILVER_COIN] },
-  'Neith':                             { respawn:   undefined, days: [MON, TUE, WED, THUR, FRI, SAT],      schedule: ['06:30', '12:30', '18:30'],            rewards: [REWARD.GOLD_COIN, REWARD.SILVER_COIN] },
-  'Isis':                              { respawn:   undefined, days: [MON, TUE, WED, THUR, FRI, SAT],      schedule: ['07:30', '14:30', '20:30'],            rewards: [REWARD.GOLD_COIN, REWARD.SILVER_COIN] },
-  'Anubis':                            { respawn:   undefined, days: [MON, TUE, WED, THUR, FRI, SAT],      schedule: ['07:30', '14:30', '20:30'],            rewards: [REWARD.GOLD_COIN, REWARD.SILVER_COIN] },
-  'Haroesis':                          { respawn:   undefined, days: [SUN],                                schedule: ['18:30'],                              rewards: [REWARD.GOLD_COIN, REWARD.SILVER_COIN] },
-  'Seth':                              { respawn:   undefined, days: [SUN],                                schedule: ['18:30'],                              rewards: [REWARD.GOLD_COIN, REWARD.SILVER_COIN] },
-} satisfies Record<string, BossConfig>;
+const defineBosses = <K extends string>(config: Record<K, BossConfig>) => config;
+export const BOSS_CONFIG = defineBosses({
+  'Ancient Librarian':                 { respawn:  8.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Desert Beast [INT]':                { respawn:  9.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Desert Beast [STR]':                { respawn:  9.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Gnome Earth Element [STR]':         { respawn:  6.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Hew Snake General [STR]':           { respawn:  7.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Jung Snake General [INT]':          { respawn:  7.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Ki Snake General [INT]':            { respawn:  7.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Lost Pharaoh':                      { respawn:  8.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Poison Frog':                       { respawn: 12.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.GC, Reward.SC, Reward.BC, Reward.LSC] },
+  'Poison Spider':                     { respawn:  6.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.GC, Reward.SC, Reward.BC, Reward.LSC] },
+  'Salamander Fire Element [STR]':     { respawn:  6.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Salt Desert Demon':                 { respawn: 10.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Sand Monster [INT]':                { respawn:  6.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Sand Monster [STR]':                { respawn:  6.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'SoSo The Black Viper':              { respawn:  7.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'SoSo The Black Viper [INT]':        { respawn:  7.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'SoSo The Black Viper [STR]':        { respawn:  7.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Sphinx (INT)':                      { respawn:  9.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Sphinx (STR)':                      { respawn:  9.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Sylph Wind Element [INT]':          { respawn:  6.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Undine Water Element[INT]':         { respawn:  6.5 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Yul Snake General [STR]':           { respawn:  7.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Selket':                            { respawn:   undefined, days: [MON, TUE, WED, THUR, FRI, SAT],      schedule: ['06:30', '12:30', '18:30'],            rewards: [Reward.GC, Reward.SC] },
+  'Neith':                             { respawn:   undefined, days: [MON, TUE, WED, THUR, FRI, SAT],      schedule: ['06:30', '12:30', '18:30'],            rewards: [Reward.GC, Reward.SC] },
+  'Isis':                              { respawn:   undefined, days: [MON, TUE, WED, THUR, FRI, SAT],      schedule: ['07:30', '14:30', '20:30'],            rewards: [Reward.GC, Reward.SC] },
+  'Anubis':                            { respawn:   undefined, days: [MON, TUE, WED, THUR, FRI, SAT],      schedule: ['07:30', '14:30', '20:30'],            rewards: [Reward.GC, Reward.SC] },
+  'Haroesis':                          { respawn:   undefined, days: [SUN],                                schedule: ['18:30'],                              rewards: [Reward.GC, Reward.SC] },
+  'Seth':                              { respawn:   undefined, days: [SUN],                                schedule: ['18:30'],                              rewards: [Reward.GC, Reward.SC] },
+});
 
 export type BossName = keyof typeof BOSS_CONFIG;

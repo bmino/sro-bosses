@@ -1,7 +1,14 @@
 import { serve } from 'bun';
 import index from './index.html';
-import {crawlKillFeed, getBossDeaths, getBossNames, reportBossDeath} from '@/BossService.ts'
+import {
+  crawlKillFeed,
+  getBossConfig,
+  getBossDeaths,
+  getBossNames,
+  reportBossDeath
+} from '@/BossService.ts'
 import {HOUR, MINUTE} from '@/Constants.ts'
+import { BOSS_CONFIG, Reward } from '../config/eventConfig.ts'
 
 const server = serve({
   routes: {
@@ -11,6 +18,23 @@ const server = serve({
     '/api/boss': {
       GET: async () => {
         return Response.json(getBossNames());
+      },
+    },
+
+    '/api/reward': {
+      GET: async () => {
+        return Response.json(Object.values(Reward));
+      },
+    },
+
+    '/api/boss/reward/:reward': {
+      GET: async (req) => {
+        const { reward } = req.params;
+        if (!Object.values(Reward).includes(reward as Reward)) return new Response('Invalid reward', { status: 400 });
+        const bossNamesWithGoldCoinDrop = Object.entries(BOSS_CONFIG)
+          .filter(([, bossConfig]) => bossConfig.rewards.includes(reward as Reward))
+          .map(([bossName,]) => bossName);
+        return Response.json(bossNamesWithGoldCoinDrop);
       },
     },
 
@@ -39,6 +63,12 @@ const server = serve({
           }
         }
       }
+    },
+
+    '/api/boss/config': {
+      GET: async () => {
+        return Response.json(getBossConfig());
+      },
     },
 
     '/api/*': new Response('Not Found', { status: 404 }),

@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
-import {BOSS_CONFIG, SCHEDULE_TZ_OFFSET, type BossName, type BossConfig} from '../config/eventConfig.ts'
 import {DAY, HOUR, MINUTE, SECOND} from '@/Constants.ts'
+import {BOSS_CONFIG, SCHEDULE_TZ_OFFSET, type BossName, type BossConfig, type Reward} from '../config/eventConfig.ts'
 
 const FRESH_DEATH_DURATION = 4 * HOUR;
 const URL = 'https://playlegends.online';
@@ -27,6 +27,10 @@ export function getBossNames() {
 export async function getBossDeaths() {
   const json: Record<BossName, BossDeath> = await DEATHS_FILE.json();
   return Object.values(json);
+}
+
+export function getBossConfig() {
+  return BOSS_CONFIG;
 }
 
 export async function reportBossDeath(bossName: string, msSinceDeath: number) {
