@@ -1,6 +1,6 @@
 import * as cheerio from 'cheerio';
-import {BOSS_CONFIG, type BossName} from '../config/eventConfig.ts'
-import {HOUR, MINUTE, SECOND} from '@/Constants.ts'
+import {BOSS_CONFIG, SCHEDULE_TZ_OFFSET, type BossName, type BossConfig} from '../config/eventConfig.ts'
+import {DAY, HOUR, MINUTE, SECOND} from '@/Constants.ts'
 
 const FRESH_DEATH_DURATION = 4 * HOUR;
 const URL = 'https://playlegends.online';
@@ -82,7 +82,7 @@ export async function crawlKillFeed() {
     try {
       const bossDeath = parseCrawledText($(element).text());
 
-      // Gracefully move on if death is not being tracked (Isis, Anubis, etc.)
+      // Gracefully move on if death is not being tracked
       if (!bossDeath) continue;
 
       // Ignore death that we already know about
@@ -162,10 +162,42 @@ function createBossDeath(boss: string, killer: string, msSinceDeath: number): Bo
   const bossName = boss as BossName;
 
   const timeOfDeath = Date.now() - msSinceDeath;
+  const timeOfNextSpawn = calculateNextSpawn(timeOfDeath, BOSS_CONFIG[bossName]);
+
   return {
     bossName: bossName,
     killer: killer,
     timeLastDeath: timeOfDeath,
-    timeNextSpawn: timeOfDeath + BOSS_CONFIG[bossName].respawn,
+    timeNextSpawn: timeOfNextSpawn,
   };
+}
+
+function calculateNextSpawn(deathTime: number, bossConfig: BossConfig): number {
+  const { respawn, schedule, days } = bossConfig;
+
+  // Handle simplistic respawn mechanics
+  if (respawn) {
+    return deathTime + respawn;
+  }
+
+  for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
+    // Shift into UTC+3 so getUTC* methods return game-server-local calendar fields.
+    const shiftedTime = new Date(deathTime + SCHEDULE_TZ_OFFSET + dayOffset * DAY);
+    if (!days.includes(shiftedTime.getUTCDay())) continue;
+
+    for (const time of schedule) {
+      const [hh, mm] = time.split(':').map(n => Number.parseInt(n, 10));
+      // Build wall-clock time in UTC+3, then translate back to a real UTC timestamp.
+      const wallClockUtc = Date.UTC(
+        shiftedTime.getUTCFullYear(),
+        shiftedTime.getUTCMonth(),
+        shiftedTime.getUTCDate(),
+        hh!, mm!,
+      );
+      const respawnCandidateTime = wallClockUtc - SCHEDULE_TZ_OFFSET;
+      if (respawnCandidateTime > deathTime) return respawnCandidateTime;
+    }
+  }
+
+  throw new Error('No scheduled spawn found within 14 days.');
 }
