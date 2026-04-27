@@ -41,7 +41,7 @@ export function App() {
 
   const nextSpawns = [...uniqueDeaths]
     .sort((a, b) => a.timeNextSpawn - b.timeNextSpawn)
-    .slice(0, 15);
+    .slice(0, 20);
 
   return (
     <div className="app-container">
