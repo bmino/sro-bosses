@@ -1,42 +1,45 @@
 import * as cheerio from 'cheerio';
-import {DAY, HOUR, MINUTE, SECOND} from '@/Constants.ts'
-import {BOSS_CONFIG, SCHEDULE_TZ_OFFSET, type BossName, type BossConfig, type Reward} from '../config/eventConfig.ts'
+import {BOSS_CONFIG, type BossName, type BossConfig, SCHEDULE_TZ_OFFSET} from '../config/eventConfig.ts';
+import {DAY, HOUR, MINUTE, SECOND} from '@/Constants.ts';
+import * as DeathDataService from './DeathDataService.ts';
+import * as ServerStatusDataService from '@/ServerStatusDataService.ts';
+import {type BossDeath, type ServerStatus} from '@/models';
 
 const FRESH_DEATH_DURATION = 4 * HOUR;
 const URL = 'https://playlegends.online';
-const DEATHS_FILE = Bun.file('./data/DEATHS.json');
-
-export type BossDeath = {
-  bossName: BossName;
-  killer: string;
-  timeLastDeath: number;
-  timeNextSpawn: number;
-};
 
 export class InvalidBossName extends Error {
   constructor(bossName: string) {
     super(`Boss "${bossName}" not found in config.`);
-    this.name = "InvalidBossName";
+    this.name = 'InvalidBossName';
   }
 }
 
-export function getBossNames() {
-  return Object.keys(BOSS_CONFIG);
+export async function initializeAllData() {
+  await DeathDataService.initializeData();
+  await ServerStatusDataService.initializeData();
 }
 
-export async function getBossDeaths() {
-  const json: Record<BossName, BossDeath> = await DEATHS_FILE.json();
-  return Object.values(json);
+export function getBossNames(): BossName[] {
+  return Object.keys(BOSS_CONFIG) as BossName[];
 }
 
 export function getBossConfig() {
   return BOSS_CONFIG;
 }
 
+export async function getBossDeaths(): Promise<BossDeath[]> {
+  return await DeathDataService.readAllBossDeaths();
+}
+
+export async function getServerStatus() {
+  return await ServerStatusDataService.readJson();
+}
+
 export async function reportBossDeath(bossName: string, msSinceDeath: number) {
   const deathTime = Date.now() - msSinceDeath;
 
-  const historyJson: Record<BossName, BossDeath> = await DEATHS_FILE.json();
+  const historyJson: Record<BossName, BossDeath> = await DeathDataService.readJson();
 
   // Ignore death that we already know about
   if (historyJson[bossName as BossName]) {
@@ -45,48 +48,63 @@ export async function reportBossDeath(bossName: string, msSinceDeath: number) {
   }
 
   console.log(`Death reported! ${bossName} killed at ${deathTime}`);
-  historyJson[bossName as BossName] = createBossDeath(
+  const bossDeath = createBossDeath(
     bossName,
     'Unknown',
     msSinceDeath,
   );
 
-  await Bun.write(DEATHS_FILE, JSON.stringify(historyJson));
+  await DeathDataService.createBossDeath(bossName as BossName, bossDeath);
 }
 
 export async function removeBossDeath(bossName: string) {
-  const historyJson: Record<BossName, BossDeath> = await DEATHS_FILE.json();
+  const historyJson: Record<BossName, BossDeath> = await DeathDataService.readJson();
 
   if (!historyJson[bossName as BossName]) throw new Error('Boss death has not been tracked');
 
-  delete historyJson[bossName as BossName];
-
-  await Bun.write(DEATHS_FILE, JSON.stringify(historyJson));
+  await DeathDataService.deleteBossDeath(bossName as BossName);
 }
 
-export async function crawlKillFeed() {
-  const historyJson: Record<BossName, BossDeath> = await DEATHS_FILE.json();
+export async function removeBossDeathsWithSpawnBetweenTimes(epochTimeFloor: number, epochTimeCeil: number) {
+  const deaths: BossDeath[] = await DeathDataService.readAllBossDeaths();
 
-  let pageData;
+  const bossNamesToDelete = deaths
+    .filter((death: BossDeath) => death.timeNextSpawn >= epochTimeFloor && death.timeNextSpawn <= epochTimeCeil)
+    .map((bossDeath: BossDeath) => bossDeath.bossName);
+
+  await DeathDataService.deleteBossDeaths(bossNamesToDelete);
+}
+
+export async function cleanseDeathsWhileOffline() {
+  const serverStatusJson: ServerStatus = await ServerStatusDataService.readJson();
+  const isServerOffline = serverStatusJson.timeLastOffline > serverStatusJson.timeLastOnline;
+  if (isServerOffline) {
+    await removeBossDeathsWithSpawnBetweenTimes(serverStatusJson.timeLastOnline, serverStatusJson.timeLastOffline);
+  }
+}
+
+export async function crawlFrontPage() {
+  const historyJson: Record<BossName, BossDeath> = await DeathDataService.readJson();
+
+  // 1. Load and scrape website
   console.log(`--- Scraping ${URL}: ${new Date().toLocaleTimeString()} ---`);
+  let $;
   try {
     const response = await Bun.fetch(URL, {
       headers: { 'User-Agent': 'Mozilla/5.0' }
     });
-    pageData = await response.text();
+    const pageData = await response.text();
+    $ = cheerio.load(pageData);
   } catch (e) {
     console.error(e);
     return;
   }
 
-  const $ = cheerio.load(pageData);
-  const elements = $('div.uniquekills div.discussions-info');
-
-  for (const element of elements) {
+  // 2a. Parse scraped data (boss deaths)
+  const uniqueKillsElements = $('div.uniquekills div.discussions-info');
+  for (const element of uniqueKillsElements) {
     try {
-      const bossDeath = parseCrawledText($(element).text());
-
-      // Gracefully move on if death is not being tracked
+      const bossDeath: BossDeath | null = parseCrawledText($(element).text());
       if (!bossDeath) continue;
 
       // Ignore death that we already know about
@@ -96,13 +114,20 @@ export async function crawlKillFeed() {
       }
 
       console.log(`Death detected! ${bossDeath.bossName} killed by ${bossDeath.killer} at ${bossDeath.timeLastDeath}`);
-      historyJson[bossDeath.bossName] = bossDeath;
+      await DeathDataService.createBossDeath(bossDeath.bossName, bossDeath);
     } catch (e) {
       console.error(e);
     }
   }
 
-  await Bun.write(DEATHS_FILE, JSON.stringify(historyJson));
+  // 2b. Parse scraped data (server status)
+  const serverOnlineElement = $('div.server-online div.online-label').first();
+  if (serverOnlineElement.text() === 'Online') {
+    await ServerStatusDataService.updateTimeLastOnline(Date.now());
+  } else {
+    console.log('Server status: offline');
+    await ServerStatusDataService.updateTimeLastOffline(Date.now());
+  }
 }
 
 function parseCrawledText(crawledText: string): BossDeath | null {

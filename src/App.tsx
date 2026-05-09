@@ -1,8 +1,8 @@
-import "./index.css";
-import { useEffect, useState } from 'react';
-import { type BossDeath } from '@/BossService.ts';
-import { HOUR, SECOND, MINUTE } from '@/Constants.ts';
-import { Reward } from '../config/eventConfig.ts'
+import './index.css';
+import {useEffect, useState} from 'react';
+import {Reward} from '../config/eventConfig.ts';
+import {HOUR, SECOND, MINUTE} from '@/Constants.ts';
+import {type BossDeath} from '@/models';
 
 export function App() {
   const [uniqueDeaths, setUniqueDeaths] = useState<BossDeath[]>([]);
@@ -25,7 +25,7 @@ export function App() {
       fetch('api/boss/death')
         .then((res) => res.json())
         .then(setUniqueDeaths)
-        .catch(err => console.error("Update failed", err));
+        .catch(err => console.error('Update failed', err));
     };
 
     fetchDeaths();
@@ -44,17 +44,17 @@ export function App() {
     .slice(0, 20);
 
   return (
-    <div className="app-container">
-      <header className="header">
+    <div className='app-container'>
+      <header className='header'>
         <h1>Legends Radar</h1>
-        <div className="live-indicator">LIVE FEED • {new Date(now).toLocaleTimeString()}</div>
+        <div className='live-indicator'>LIVE FEED • {new Date(now).toLocaleTimeString()}</div>
       </header>
 
-      <div className="boss-grid">
+      <div className='boss-grid'>
         {nextSpawns.map((death) => {
           const timeLeft = death.timeNextSpawn - now;
           const isActive = timeLeft <= 0;
-          const isUrgent = !isActive && timeLeft < (10 * MINUTE);
+          const isUrgent = !isActive && timeLeft < (15 * MINUTE);
           const hasGoldCoinDrop = goldCoinBosses.includes(death.bossName);
 
           // Calculate progress percentage
@@ -74,8 +74,8 @@ export function App() {
                 </div>
               </div>
 
-              <div className="timer-section">
-                <div className="countdown">
+              <div className='timer-section'>
+                <div className='countdown'>
                   {formatCountdown(death.timeNextSpawn, now)}
                 </div>
                 <div className="spawn-time" hidden={isActive}>
@@ -83,7 +83,7 @@ export function App() {
                 </div>
               </div>
 
-              <div className="progress-bar" style={{ width: `${progress}%` }} />
+              <div className='progress-bar' style={{ width: `${progress}%` }} />
             </div>
           );
         })}
@@ -94,7 +94,7 @@ export function App() {
 
 function formatCountdown(targetMs: number, now: number): string {
   const diff = targetMs - now;
-  if (diff <= 0) return "ACTIVE";
+  if (diff <= 0) return 'ACTIVE';
 
   const h = Math.floor(diff / HOUR);
   const m = Math.floor((diff % HOUR) / MINUTE);

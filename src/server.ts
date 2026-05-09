@@ -1,14 +1,19 @@
-import { serve } from 'bun';
+import {serve} from 'bun';
 import index from './index.html';
+import {BOSS_CONFIG, Reward} from '../config/eventConfig.ts';
 import {
-  crawlKillFeed,
+  cleanseDeathsWhileOffline,
+  crawlFrontPage,
   getBossConfig,
   getBossDeaths,
   getBossNames,
-  reportBossDeath
-} from '@/BossService.ts'
-import {HOUR, MINUTE} from '@/Constants.ts'
-import { BOSS_CONFIG, Reward } from '../config/eventConfig.ts'
+  getServerStatus,
+  initializeAllData,
+  removeBossDeath,
+  reportBossDeath,
+} from '@/BossService.ts';
+import {HOUR, MINUTE} from '@/Constants.ts';
+import {backupJson as backupDEATHS} from '@/DeathDataService.ts';
 
 const server = serve({
   routes: {
@@ -18,12 +23,6 @@ const server = serve({
     '/api/boss': {
       GET: async () => {
         return Response.json(getBossNames());
-      },
-    },
-
-    '/api/reward': {
-      GET: async () => {
-        return Response.json(Object.values(Reward));
       },
     },
 
@@ -45,6 +44,7 @@ const server = serve({
       },
       PUT: async (req) => {
         const {name, h, m} = await req.json();
+
         if (name === undefined) return new Response('Missing parameter: name', { status: 400 });
         if (h === undefined) return new Response('Missing parameter: h', { status: 400 });
         if (m === undefined) return new Response('Missing parameter: m', { status: 400 });
@@ -62,7 +62,24 @@ const server = serve({
             return new Response('Unknown error', { status: 500 });
           }
         }
-      }
+      },
+      DELETE: async (req) => {
+        const {name} = await req.json();
+
+        if (name === undefined) return new Response('Missing parameter: name', { status: 400 });
+        if (!getBossNames().includes(name)) return new Response('Invalid name', { status: 400 });
+
+        try {
+          await removeBossDeath(name);
+          return new Response('Removed');
+        } catch (err) {
+          if (err instanceof Error) {
+            return new Response(err.message, { status: 500 });
+          } else {
+            return new Response('Unknown error', { status: 500 });
+          }
+        }
+      },
     },
 
     '/api/boss/config': {
@@ -71,8 +88,20 @@ const server = serve({
       },
     },
 
-    '/api/*': new Response('Not Found', { status: 404 }),
+    '/api/reward': {
+      GET: async () => {
+        return Response.json(Object.values(Reward));
+      },
+    },
 
+    '/api/server': {
+      GET: async () => {
+        const serverStatus = await getServerStatus();
+        return Response.json(serverStatus);
+      },
+    },
+
+    '/api/*': new Response('Not Found', { status: 404 }),
   },
 
   development: process.env.NODE_ENV !== 'production' && {
@@ -84,6 +113,15 @@ const server = serve({
   },
 });
 
-Bun.cron('* * * * *', crawlKillFeed);
+await initializeAllData();
+
+Bun.cron('* * * * *', async () => {
+  await crawlFrontPage();
+  await cleanseDeathsWhileOffline();
+});
+
+Bun.cron('0 0,12 * * *', async () => {
+  await backupDEATHS();
+});
 
 console.log(`🚀 Server running at ${server.url}`);
