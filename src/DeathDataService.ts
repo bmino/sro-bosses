@@ -1,11 +1,20 @@
-const DEATHS_FILE = Bun.file('./data/DEATHS.json');
+import { chmod } from 'node:fs/promises';
+const DEATHS_FILE_PATH = './data/DEATHS.json';
+const DEATHS_FILE = Bun.file(DEATHS_FILE_PATH);
 import {type BossName} from '../config/eventConfig.ts';
 import {type BossDeath} from '@/models';
 
 export async function initializeData() {
-  if (!await DEATHS_FILE.exists()) {
-    await Bun.write(DEATHS_FILE, JSON.stringify({} as Record<BossName, BossDeath>));
+  if (await DEATHS_FILE.exists()) {
+    try {
+      const text = await DEATHS_FILE.text();
+      if (JSON.parse(text)) return;
+    } catch (e) {}
   }
+
+  console.log(`Initializing ${DEATHS_FILE.name}`);
+  await Bun.write(DEATHS_FILE, JSON.stringify({} as Record<BossName, BossDeath>));
+  await chmod(DEATHS_FILE_PATH , 0o664);
 }
 
 export async function createJson(json: Record<BossName, BossDeath>): Promise<number> {
