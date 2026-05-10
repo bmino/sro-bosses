@@ -120,7 +120,7 @@ Bun.cron('* * * * *', async () => {
   await cleanseDeathsWhileOffline();
 });
 
-Bun.cron('0 0,12 * * *', async () => {
+Bun.cron('30 0,12 * * *', async () => {
   await backupDEATHS();
 });
 

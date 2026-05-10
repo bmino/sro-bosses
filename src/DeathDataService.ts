@@ -52,6 +52,8 @@ export async function deleteBossDeaths(bossNames: BossName[]): Promise<void> {
 }
 
 export async function backupJson() {
-  const backupFile = Bun.file(`./data/DEATHS-${Date.now()}.json`);
+  const backupFilePath = `./data/DEATHS-${Date.now()}.json`;
+  console.log(`Backing up ${DEATHS_FILE.name} to ${backupFilePath}`);
+  const backupFile = Bun.file(backupFilePath);
   return await Bun.write(backupFile, DEATHS_FILE);
 }

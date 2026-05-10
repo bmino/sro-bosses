@@ -66,11 +66,15 @@ export async function removeBossDeath(bossName: string) {
 }
 
 export async function removeBossDeathsWithSpawnBetweenTimes(epochTimeFloor: number, epochTimeCeil: number) {
+  console.log(`Removing boss deaths between ${epochTimeFloor} and ${epochTimeCeil}`);
   const deaths: BossDeath[] = await DeathDataService.readAllBossDeaths();
 
   const bossNamesToDelete = deaths
     .filter((death: BossDeath) => death.timeNextSpawn >= epochTimeFloor && death.timeNextSpawn <= epochTimeCeil)
     .map((bossDeath: BossDeath) => bossDeath.bossName);
+
+  console.log(`Identified bosses to delete: [${bossNamesToDelete.join(',')}]`);
+  if (bossNamesToDelete.length === 0) return;
 
   await DeathDataService.deleteBossDeaths(bossNamesToDelete);
 }
