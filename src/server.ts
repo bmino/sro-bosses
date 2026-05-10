@@ -42,7 +42,7 @@ const server = serve({
         return Response.json(bossDeaths);
       },
       PUT: async (req) => {
-        const {name, h, m} = await req.json();
+        const {name, killer, h, m} = await req.json();
 
         if (name === undefined) return new Response('Missing parameter: name', { status: 400 });
         if (h === undefined) return new Response('Missing parameter: h', { status: 400 });
@@ -51,8 +51,10 @@ const server = serve({
         if (Number.isNaN(h) || h < 0) return new Response('Invalid h', { status: 400 });
         if (Number.isNaN(m) || m < 0) return new Response('Invalid m', { status: 400 });
 
+        const killerName = killer ?? 'Unknown';
+
         try {
-          await reportBossDeath(name, (h * HOUR) + (m * MINUTE));
+          await reportBossDeath(name, killerName, (h * HOUR) + (m * MINUTE));
           return new Response('Updated');
         } catch (err) {
           if (err instanceof Error) {

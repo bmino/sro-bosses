@@ -31,7 +31,7 @@ export async function getServerStatus() {
   return ServerStatusDataService.readJson();
 }
 
-export async function reportBossDeath(bossName: string, msSinceDeath: number) {
+export async function reportBossDeath(bossName: string, killerName: string, msSinceDeath: number) {
   const deathTime = Date.now() - msSinceDeath;
 
   const historyJson: Record<BossName, BossDeath> = DeathDataService.readJson();
@@ -45,7 +45,7 @@ export async function reportBossDeath(bossName: string, msSinceDeath: number) {
   console.log(`Death reported! ${bossName} killed at ${deathTime}`);
   const bossDeath = createBossDeath(
     bossName,
-    'Unknown',
+    killerName,
     msSinceDeath,
   );
 

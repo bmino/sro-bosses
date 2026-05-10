@@ -79,7 +79,7 @@ export const BOSS_CONFIG = defineBosses({
   'Neith':                             { respawn:   undefined, days: [MON, TUE, WED, THUR, FRI, SAT],      schedule: ['06:30', '12:30', '18:30'],            rewards: [Reward.GC, Reward.SC] },
   'Isis':                              { respawn:   undefined, days: [MON, TUE, WED, THUR, FRI, SAT],      schedule: ['07:30', '14:30', '20:30'],            rewards: [Reward.GC, Reward.SC] },
   'Anubis':                            { respawn:   undefined, days: [MON, TUE, WED, THUR, FRI, SAT],      schedule: ['07:30', '14:30', '20:30'],            rewards: [Reward.GC, Reward.SC] },
-  'Haroesis':                          { respawn:   undefined, days: [SUN],                                schedule: ['18:30'],                              rewards: [Reward.GC, Reward.SC] },
+  'Haroeris':                          { respawn:   undefined, days: [SUN],                                schedule: ['18:30'],                              rewards: [Reward.GC, Reward.SC] },
   'Seth':                              { respawn:   undefined, days: [SUN],                                schedule: ['18:30'],                              rewards: [Reward.GC, Reward.SC] },
 });
 
