@@ -45,16 +45,16 @@ const server = serve({
         const {name, killer, h, m} = await req.json();
 
         if (name === undefined) return new Response('Missing parameter: name', { status: 400 });
+        if (killer === undefined) return new Response('Missing parameter: killer', { status: 400 });
         if (h === undefined) return new Response('Missing parameter: h', { status: 400 });
         if (m === undefined) return new Response('Missing parameter: m', { status: 400 });
         if (!getBossNames().includes(name)) return new Response('Invalid name', { status: 400 });
+        if (killer.length === 0) return new Response('Invalid killer', { status: 400 });
         if (Number.isNaN(h) || h < 0) return new Response('Invalid h', { status: 400 });
         if (Number.isNaN(m) || m < 0) return new Response('Invalid m', { status: 400 });
 
-        const killerName = killer ?? 'Unknown';
-
         try {
-          await reportBossDeath(name, killerName, (h * HOUR) + (m * MINUTE));
+          await reportBossDeath(name, killer, (h * HOUR) + (m * MINUTE));
           return new Response('Updated');
         } catch (err) {
           if (err instanceof Error) {
