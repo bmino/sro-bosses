@@ -1,44 +1,27 @@
-import { chmod } from 'node:fs/promises';
-const SERVER_STATUS_FILE_NAME = './data/SERVER_STATUS.json';
-const SERVER_STATUS_FILE = Bun.file(SERVER_STATUS_FILE_NAME);
-import {type ServerStatus} from '@/models';
+import db from './db.ts';
+import { type ServerStatus } from '@/models';
 
-export async function initializeData() {
-  if (await SERVER_STATUS_FILE.exists()) {
-    try {
-      const text = await SERVER_STATUS_FILE.text();
-      if (JSON.parse(text)) return;
-    } catch (e) {}
-  }
+const selectStatus = db.prepare<ServerStatus, []>(`
+  SELECT time_last_online AS timeLastOnline, time_last_offline AS timeLastOffline
+  FROM server_status WHERE id = 1
+`);
 
-  console.log(`Initializing ${SERVER_STATUS_FILE.name}`);
-  await Bun.write(SERVER_STATUS_FILE, JSON.stringify({
-    timeLastOnline: 0,
-    timeLastOffline: 0,
-  } as ServerStatus));
-  await chmod(SERVER_STATUS_FILE_NAME , 0o664);
+const setOnline = db.prepare<void, [number]>(`
+  UPDATE server_status SET time_last_online = ? WHERE id = 1
+`);
+
+const setOffline = db.prepare<void, [number]>(`
+  UPDATE server_status SET time_last_offline = ? WHERE id = 1
+`);
+
+export function readJson(): ServerStatus {
+  return selectStatus.get()!;
 }
 
-export async function createJson(json: ServerStatus): Promise<number> {
-  return await Bun.write(SERVER_STATUS_FILE, JSON.stringify(json));
+export function updateTimeLastOnline(time: number): void {
+  setOnline.run(time);
 }
 
-export async function readJson(): Promise<ServerStatus> {
-  return await SERVER_STATUS_FILE.json();
-}
-
-export async function updateTimeLastOnline(timeLastOnline: number): Promise<void> {
-  const serverStatusJson: ServerStatus = await SERVER_STATUS_FILE.json();
-
-  serverStatusJson.timeLastOnline = timeLastOnline;
-
-  await createJson(serverStatusJson);
-}
-
-export async function updateTimeLastOffline(timeLastOffline: number): Promise<void> {
-  const serverStatusJson: ServerStatus = await SERVER_STATUS_FILE.json();
-
-  serverStatusJson.timeLastOffline = timeLastOffline;
-
-  await createJson(serverStatusJson);
+export function updateTimeLastOffline(time: number): void {
+  setOffline.run(time);
 }

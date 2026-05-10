@@ -1,5 +1,6 @@
 import {serve} from 'bun';
 import index from './index.html';
+import db from './db.ts';
 import {BOSS_CONFIG, Reward} from '../config/eventConfig.ts';
 import {
   cleanseDeathsWhileOffline,
@@ -8,12 +9,10 @@ import {
   getBossDeaths,
   getBossNames,
   getServerStatus,
-  initializeAllData,
   removeBossDeath,
   reportBossDeath,
 } from '@/BossService.ts';
 import {HOUR, MINUTE} from '@/Constants.ts';
-import {backupJson as backupDEATHS} from '@/DeathDataService.ts';
 
 const server = serve({
   routes: {
@@ -113,15 +112,20 @@ const server = serve({
   },
 });
 
-await initializeAllData();
+console.log(`🚀 Server running at ${server.url}`);
 
 Bun.cron('* * * * *', async () => {
   await crawlFrontPage();
   await cleanseDeathsWhileOffline();
 });
 
-Bun.cron('30 0,12 * * *', async () => {
-  await backupDEATHS();
-});
 
-console.log(`🚀 Server running at ${server.url}`);
+async function shutdown() {
+  console.log('Shutting down ...');
+  await server.stop();
+  db.close();
+  process.exit(0);
+}
+
+process.on('SIGINT', shutdown);   // Ctrl+C
+process.on('SIGTERM', shutdown);  // Docker stop, kill, etc.

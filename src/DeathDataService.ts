@@ -1,68 +1,67 @@
-import { chmod } from 'node:fs/promises';
-const DEATHS_FILE_PATH = './data/DEATHS.json';
-const DEATHS_FILE = Bun.file(DEATHS_FILE_PATH);
+import db from './db.ts';
 import {type BossName} from '../config/eventConfig.ts';
 import {type BossDeath} from '@/models';
 
-export async function initializeData() {
-  if (await DEATHS_FILE.exists()) {
-    try {
-      const text = await DEATHS_FILE.text();
-      if (JSON.parse(text)) return;
-    } catch (e) {}
-  }
+const insert = db.prepare<void, { $bossName: BossName; $killer: string; $timeLastDeath: number; $timeNextSpawn: number }>(`
+  INSERT INTO boss_deaths (boss_name, killer, time_last_death, time_next_spawn)
+  VALUES ($bossName, $killer, $timeLastDeath, $timeNextSpawn)
+  ON CONFLICT(boss_name) DO UPDATE SET
+    killer          = excluded.killer,
+    time_last_death = excluded.time_last_death,
+    time_next_spawn = excluded.time_next_spawn
+`);
 
-  console.log(`Initializing ${DEATHS_FILE.name}`);
-  await Bun.write(DEATHS_FILE, JSON.stringify({} as Record<BossName, BossDeath>));
-  await chmod(DEATHS_FILE_PATH , 0o664);
+const selectAll = db.prepare<BossDeath, []>(`
+  SELECT boss_name AS bossName, killer, time_last_death AS timeLastDeath, time_next_spawn AS timeNextSpawn
+  FROM boss_deaths
+`);
+
+const selectOne = db.prepare<BossDeath, [string]>(`
+  SELECT boss_name AS bossName, killer, time_last_death AS timeLastDeath, time_next_spawn AS timeNextSpawn
+  FROM boss_deaths
+  WHERE boss_name = ?
+`);
+
+const deleteOne = db.prepare<void, [string]>(`
+  DELETE FROM boss_deaths WHERE boss_name = ?
+`);
+
+const deleteMany = db.transaction((bossNames: string[]) => {
+  for (const name of bossNames) deleteOne.run(name);
+});
+
+export function readJson(): Record<BossName, BossDeath> {
+  const rows = selectAll.all();
+  return Object.fromEntries(rows.map(r => [r.bossName, r])) as Record<BossName, BossDeath>;
 }
 
-export async function createJson(json: Record<BossName, BossDeath>): Promise<number> {
-  return await Bun.write(DEATHS_FILE, JSON.stringify(json));
+export function readAllBossDeaths(): BossDeath[] {
+  return selectAll.all();
 }
 
-export async function createBossDeath(bossName: BossName, bossDeath: BossDeath): Promise<void> {
-  const historyJson: Record<BossName, BossDeath> = await readJson();
-  historyJson[bossName] = bossDeath;
-  await createJson(historyJson);
+export function createBossDeath(bossDeath: BossDeath): void {
+  insert.run({
+    $bossName:      bossDeath.bossName,
+    $killer:        bossDeath.killer,
+    $timeLastDeath: bossDeath.timeLastDeath,
+    $timeNextSpawn: bossDeath.timeNextSpawn,
+  });
 }
 
-export async function readJson(): Promise<Record<BossName, BossDeath>> {
-  return await DEATHS_FILE.json();
+export function deleteBossDeath(bossName: BossName): void {
+  const existing = selectOne.get(bossName);
+  if (!existing) throw new Error('Boss death has not been tracked');
+  deleteOne.run(bossName);
 }
 
-export async function readAllBossDeaths(): Promise<BossDeath[]> {
-  const json: Record<BossName, BossDeath> = await readJson();
-  return Object.values(json);
-}
-
-export async function deleteBossDeath(bossName: BossName): Promise<void> {
-  const historyJson: Record<BossName, BossDeath> = await readJson();
-
-  if (!historyJson[bossName]) throw new Error('Boss death has not been tracked');
-
-  delete historyJson[bossName];
-
-  await createJson(historyJson);
-}
-
-export async function deleteBossDeaths(bossNames: BossName[]): Promise<void> {
-  const historyJson: Record<BossName, BossDeath> = await readJson();
-
-  if (bossNames.some((bossName: BossName) => !historyJson[bossName])) {
+export function deleteBossDeaths(bossNames: BossName[]): void {
+  const existing = readJson();
+  if (bossNames.some(name => !existing[name as BossName])) {
     throw new Error('Boss death has not been tracked');
   }
-
-  for (const bossName of bossNames) {
-    delete historyJson[bossName];
-  }
-
-  await createJson(historyJson);
+  deleteMany(bossNames);
 }
 
-export async function backupJson() {
-  const backupFilePath = `./data/DEATHS-${Date.now()}.json`;
-  console.log(`Backing up ${DEATHS_FILE.name} to ${backupFilePath}`);
-  const backupFile = Bun.file(backupFilePath);
-  return await Bun.write(backupFile, DEATHS_FILE);
+export function getOneBossDeath(bossName: BossName): BossDeath | null {
+  return selectOne.get(bossName) ?? null;
 }

@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import {BOSS_CONFIG, type BossName, type BossConfig, SCHEDULE_TZ_OFFSET} from '../config/eventConfig.ts';
+import {BOSS_CONFIG, type BossConfig, type BossName, SCHEDULE_TZ_OFFSET} from '../config/eventConfig.ts';
 import {DAY, HOUR, MINUTE, SECOND} from '@/Constants.ts';
 import * as DeathDataService from './DeathDataService.ts';
 import * as ServerStatusDataService from '@/ServerStatusDataService.ts';
@@ -15,11 +15,6 @@ export class InvalidBossName extends Error {
   }
 }
 
-export async function initializeAllData() {
-  await DeathDataService.initializeData();
-  await ServerStatusDataService.initializeData();
-}
-
 export function getBossNames(): BossName[] {
   return Object.keys(BOSS_CONFIG) as BossName[];
 }
@@ -29,17 +24,17 @@ export function getBossConfig() {
 }
 
 export async function getBossDeaths(): Promise<BossDeath[]> {
-  return await DeathDataService.readAllBossDeaths();
+  return DeathDataService.readAllBossDeaths();
 }
 
 export async function getServerStatus() {
-  return await ServerStatusDataService.readJson();
+  return ServerStatusDataService.readJson();
 }
 
 export async function reportBossDeath(bossName: string, msSinceDeath: number) {
   const deathTime = Date.now() - msSinceDeath;
 
-  const historyJson: Record<BossName, BossDeath> = await DeathDataService.readJson();
+  const historyJson: Record<BossName, BossDeath> = DeathDataService.readJson();
 
   // Ignore death that we already know about
   if (historyJson[bossName as BossName]) {
@@ -54,20 +49,20 @@ export async function reportBossDeath(bossName: string, msSinceDeath: number) {
     msSinceDeath,
   );
 
-  await DeathDataService.createBossDeath(bossName as BossName, bossDeath);
+  DeathDataService.createBossDeath(bossDeath);
 }
 
 export async function removeBossDeath(bossName: string) {
-  const historyJson: Record<BossName, BossDeath> = await DeathDataService.readJson();
+  const historyJson: Record<BossName, BossDeath> = DeathDataService.readJson();
 
   if (!historyJson[bossName as BossName]) throw new Error('Boss death has not been tracked');
 
-  await DeathDataService.deleteBossDeath(bossName as BossName);
+  DeathDataService.deleteBossDeath(bossName as BossName);
 }
 
 export async function removeBossDeathsWithSpawnBetweenTimes(epochTimeFloor: number, epochTimeCeil: number) {
   console.log(`Removing boss deaths between ${epochTimeFloor} and ${epochTimeCeil}`);
-  const deaths: BossDeath[] = await DeathDataService.readAllBossDeaths();
+  const deaths: BossDeath[] = DeathDataService.readAllBossDeaths();
 
   const bossNamesToDelete = deaths
     .filter((death: BossDeath) => death.timeNextSpawn >= epochTimeFloor && death.timeNextSpawn <= epochTimeCeil)
@@ -76,11 +71,11 @@ export async function removeBossDeathsWithSpawnBetweenTimes(epochTimeFloor: numb
   console.log(`Identified bosses to delete: [${bossNamesToDelete.join(',')}]`);
   if (bossNamesToDelete.length === 0) return;
 
-  await DeathDataService.deleteBossDeaths(bossNamesToDelete);
+  DeathDataService.deleteBossDeaths(bossNamesToDelete);
 }
 
 export async function cleanseDeathsWhileOffline() {
-  const serverStatusJson: ServerStatus = await ServerStatusDataService.readJson();
+  const serverStatusJson: ServerStatus = ServerStatusDataService.readJson();
   const isServerOffline = serverStatusJson.timeLastOffline > serverStatusJson.timeLastOnline;
   if (isServerOffline) {
     await removeBossDeathsWithSpawnBetweenTimes(serverStatusJson.timeLastOnline, serverStatusJson.timeLastOffline);
@@ -88,7 +83,7 @@ export async function cleanseDeathsWhileOffline() {
 }
 
 export async function crawlFrontPage() {
-  const historyJson: Record<BossName, BossDeath> = await DeathDataService.readJson();
+  const historyJson: Record<BossName, BossDeath> = DeathDataService.readJson();
 
   // 1. Load and scrape website
   console.log(`--- Scraping ${URL}: ${new Date().toLocaleTimeString()} ---`);
@@ -118,7 +113,7 @@ export async function crawlFrontPage() {
       }
 
       console.log(`Death detected! ${bossDeath.bossName} killed by ${bossDeath.killer} at ${bossDeath.timeLastDeath}`);
-      await DeathDataService.createBossDeath(bossDeath.bossName, bossDeath);
+      DeathDataService.createBossDeath(bossDeath);
     } catch (e) {
       console.error(e);
     }
@@ -127,10 +122,10 @@ export async function crawlFrontPage() {
   // 2b. Parse scraped data (server status)
   const serverOnlineElement = $('div.server-online div.online-label').first();
   if (serverOnlineElement.text() === 'Online') {
-    await ServerStatusDataService.updateTimeLastOnline(Date.now());
+    ServerStatusDataService.updateTimeLastOnline(Date.now());
   } else {
     console.log('Server status: offline');
-    await ServerStatusDataService.updateTimeLastOffline(Date.now());
+    ServerStatusDataService.updateTimeLastOffline(Date.now());
   }
 }
 
