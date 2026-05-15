@@ -60,12 +60,13 @@ export async function removeBossDeath(bossName: string) {
   DeathDataService.deleteBossDeath(bossName as BossName);
 }
 
-export async function removeBossDeathsWithSpawnBetweenTimes(epochTimeFloor: number, epochTimeCeil: number) {
+export async function removeUnscheduledBossDeathsWithSpawnBetweenTimes(epochTimeFloor: number, epochTimeCeil: number) {
   console.log(`Removing boss deaths between ${epochTimeFloor} and ${epochTimeCeil}`);
   const deaths: BossDeath[] = DeathDataService.readAllBossDeaths();
 
   const bossNamesToDelete = deaths
     .filter((death: BossDeath) => death.timeNextSpawn >= epochTimeFloor && death.timeNextSpawn <= epochTimeCeil)
+    .filter((death: BossDeath) => BOSS_CONFIG[death.bossName].schedule.length === 0)
     .map((bossDeath: BossDeath) => bossDeath.bossName);
 
   console.log(`Identified bosses to delete: [${bossNamesToDelete.join(',')}]`);
@@ -74,11 +75,34 @@ export async function removeBossDeathsWithSpawnBetweenTimes(epochTimeFloor: numb
   DeathDataService.deleteBossDeaths(bossNamesToDelete);
 }
 
+export async function updateScheduledBossDeathsWithSpawnBetweenTimes(epochTimeFloor: number, epochTimeCeil: number) {
+  console.log(`Updating scheduled boss deaths between ${epochTimeFloor} and ${epochTimeCeil}`);
+  const deaths: BossDeath[] = DeathDataService.readAllBossDeaths();
+  const now = Date.now();
+
+  const bossDeathsToUpdate = deaths
+    .filter((death: BossDeath) => death.timeNextSpawn >= epochTimeFloor && death.timeNextSpawn <= epochTimeCeil)
+    .filter((death: BossDeath) => BOSS_CONFIG[death.bossName].schedule.length > 0)
+    .map((death: BossDeath) => ({
+      ...death,
+      timeNextSpawn: calculateNextSpawn(now, BOSS_CONFIG[death.bossName]),
+    }));
+
+  const bossNamesToUpdate = bossDeathsToUpdate.map((bossDeath: BossDeath) => bossDeath.bossName);
+  console.log(`Identified bosses to update: [${bossNamesToUpdate.join(',')}]`);
+  if (bossDeathsToUpdate.length === 0) return;
+
+  for (const bossDeathToUpdate of bossDeathsToUpdate) {
+    DeathDataService.createBossDeath(bossDeathToUpdate);
+  }
+}
+
 export async function cleanseDeathsWhileOffline() {
   const serverStatusJson: ServerStatus = ServerStatusDataService.readJson();
   const isServerOffline = serverStatusJson.timeLastOffline > serverStatusJson.timeLastOnline;
   if (isServerOffline) {
-    await removeBossDeathsWithSpawnBetweenTimes(serverStatusJson.timeLastOnline, serverStatusJson.timeLastOffline);
+    await removeUnscheduledBossDeathsWithSpawnBetweenTimes(serverStatusJson.timeLastOnline, serverStatusJson.timeLastOffline);
+    await updateScheduledBossDeathsWithSpawnBetweenTimes(serverStatusJson.timeLastOnline, serverStatusJson.timeLastOffline);
   }
 }
 
@@ -86,7 +110,6 @@ export async function crawlFrontPage() {
   const historyJson: Record<BossName, BossDeath> = DeathDataService.readJson();
 
   // 1. Load and scrape website
-  console.log(`--- Scraping ${URL}: ${new Date().toLocaleTimeString()} ---`);
   let $;
   try {
     const response = await Bun.fetch(URL, {

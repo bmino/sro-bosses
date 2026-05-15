@@ -117,6 +117,7 @@ const server = serve({
 console.log(`🚀 Server running at ${server.url}`);
 
 Bun.cron('* * * * *', async () => {
+  console.log(`--- Cron tick at ${new Date().toLocaleTimeString()} ---`);
   await crawlFrontPage();
   await cleanseDeathsWhileOffline();
 });
@@ -124,8 +125,9 @@ Bun.cron('* * * * *', async () => {
 
 async function shutdown() {
   console.log('Shutting down ...');
-  await server.stop();
+  await server.stop(true);
   db.close();
+  console.log('Done');
   process.exit(0);
 }
 
