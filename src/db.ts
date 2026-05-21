@@ -5,7 +5,9 @@ import path from 'node:path';
 await mkdir('./data', { recursive: true });
 
 const db = new Database(path.join(import.meta.dir, '../data/bosses.db'));
-db.run('PRAGMA journal_mode = WAL');
+db.run("PRAGMA journal_mode = WAL;");
+db.run("PRAGMA synchronous = NORMAL;");
+db.run("PRAGMA busy_timeout = 5000;");
 
 // --- Migrations ---
 

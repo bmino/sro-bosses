@@ -41,7 +41,12 @@ const server = serve({
         const bossDeaths = await getBossDeaths();
         return Response.json(bossDeaths);
       },
-      PUT: async (req) => {
+      POST: async (req) => {
+        const auth = req.headers.get('Authorization');
+        if (auth !== `Bearer ${process.env.PASSWORD}`) {
+          return new Response("Unauthorized", { status: 401 });
+        }
+
         const {name, killer, h, m} = await req.json();
 
         if (name === undefined) return new Response('Missing parameter: name', { status: 400 });
@@ -65,6 +70,11 @@ const server = serve({
         }
       },
       DELETE: async (req) => {
+        const auth = req.headers.get('Authorization');
+        if (auth !== `Bearer ${process.env.PASSWORD}`) {
+          return new Response("Unauthorized", { status: 401 });
+        }
+
         const {name} = await req.json();
 
         if (name === undefined) return new Response('Missing parameter: name', { status: 400 });
