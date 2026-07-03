@@ -11,7 +11,7 @@ import {
   getServerStatus,
   removeBossDeath,
   reportBossDeath,
-} from '@/BossService.ts';
+} from '@/services/BossService.ts';
 import {HOUR, MINUTE} from '@/Constants.ts';
 
 const server = serve({

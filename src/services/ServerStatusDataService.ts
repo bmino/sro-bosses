@@ -1,4 +1,4 @@
-import db from './db.ts';
+import db from '../db.ts';
 import { type ServerStatus } from '@/models';
 
 const selectStatus = db.prepare<ServerStatus, []>(`

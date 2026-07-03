@@ -1,8 +1,8 @@
 import * as cheerio from 'cheerio';
-import {BOSS_CONFIG, type BossConfig, type BossName, SCHEDULE_TZ_OFFSET} from '../config/eventConfig.ts';
+import {BOSS_CONFIG, type BossConfig, type BossName, SCHEDULE_TZ_OFFSET} from '../../config/eventConfig.ts';
 import {DAY, HOUR, MINUTE, SECOND} from '@/Constants.ts';
 import * as DeathDataService from './DeathDataService.ts';
-import * as ServerStatusDataService from '@/ServerStatusDataService.ts';
+import * as ServerStatusDataService from '@/services/ServerStatusDataService.ts';
 import {type BossDeath, type ServerStatus} from '@/models';
 
 const FRESH_DEATH_DURATION = 4 * HOUR;

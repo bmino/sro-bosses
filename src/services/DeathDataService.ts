@@ -1,5 +1,5 @@
-import db from './db.ts';
-import {type BossName} from '../config/eventConfig.ts';
+import db from '../db.ts';
+import {type BossName} from '../../config/eventConfig.ts';
 import {type BossDeath} from '@/models';
 
 const insert = db.prepare<void, { $bossName: BossName; $killer: string; $timeLastDeath: number; $timeNextSpawn: number }>(`
