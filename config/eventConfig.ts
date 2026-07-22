@@ -55,6 +55,8 @@ export const BOSS_CONFIG = defineBosses({
   'Anubis':                            { respawn:   undefined, days: [MON, TUE, WED, THUR, FRI, SAT, SUN], schedule: ['07:30', '14:30', '20:30'],            rewards: [Reward.GC, Reward.SC] },
   'Haroeris':                          { respawn:   undefined, days: [SUN],                                schedule: ['18:30'],                              rewards: [Reward.GC, Reward.SC] },
   'Seth':                              { respawn:   undefined, days: [SUN],                                schedule: ['18:30'],                              rewards: [Reward.GC, Reward.SC] },
+  'Fire Demon':                        { respawn:  6.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Fire Cerberus':                     { respawn:  12.0 * HOUR, days: [SUN, MON, TUE, WED, THUR, FRI, SAT], schedule: [],                                     rewards: [Reward.SC, Reward.BC, Reward.LSC] },
 });
 
 export type BossName = keyof typeof BOSS_CONFIG;
