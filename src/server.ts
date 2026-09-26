@@ -29,10 +29,10 @@ const server = serve({
       GET: async (req) => {
         const { reward } = req.params;
         if (!Object.values(Reward).includes(reward as Reward)) return new Response('Invalid reward', { status: 400 });
-        const bossNamesWithGoldCoinDrop = Object.entries(BOSS_CONFIG)
+        const bossNamesWithReward = Object.entries(BOSS_CONFIG)
           .filter(([, bossConfig]) => bossConfig.rewards.includes(reward as Reward))
           .map(([bossName,]) => bossName);
-        return Response.json(bossNamesWithGoldCoinDrop);
+        return Response.json(bossNamesWithReward);
       },
     },
 
@@ -55,8 +55,8 @@ const server = serve({
         if (m === undefined) return new Response('Missing parameter: m', { status: 400 });
         if (!getBossNames().includes(name)) return new Response('Invalid name', { status: 400 });
         if (killer.length === 0) return new Response('Invalid killer', { status: 400 });
-        if (Number.isNaN(h) || h < 0) return new Response('Invalid h', { status: 400 });
-        if (Number.isNaN(m) || m < 0) return new Response('Invalid m', { status: 400 });
+        if (isNaN(h) || h < 0) return new Response('Invalid h', { status: 400 });
+        if (isNaN(m) || m < 0) return new Response('Invalid m', { status: 400 });
 
         try {
           await reportBossDeath(name, killer, (h * HOUR) + (m * MINUTE));
