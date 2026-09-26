@@ -1,5 +1,5 @@
 import * as cheerio from 'cheerio';
-import {BOSS_CONFIG, type BossConfig, type BossName, SCHEDULE_TZ_OFFSET} from '../../config/eventConfig.ts';
+import {BOSS_CONFIG, type BossConfig, type BossName, SCHEDULE_TZ_OFFSET, DAY_KEYS} from '../../config/eventConfig.ts';
 import {DAY, HOUR, MINUTE, SECOND} from '@/Constants.ts';
 import * as DeathDataService from './DeathDataService.ts';
 import * as ServerStatusDataService from '@/services/ServerStatusDataService.ts';
@@ -66,7 +66,7 @@ export async function removeUnscheduledBossDeathsWithSpawnBetweenTimes(epochTime
 
   const bossNamesToDelete = deaths
     .filter((death: BossDeath) => death.timeNextSpawn >= epochTimeFloor && death.timeNextSpawn <= epochTimeCeil)
-    .filter((death: BossDeath) => BOSS_CONFIG[death.bossName].schedule.length === 0)
+    .filter((death: BossDeath) => !!BOSS_CONFIG[death.bossName].respawn.interval)
     .map((bossDeath: BossDeath) => bossDeath.bossName);
 
   console.log(`Identified bosses to delete: [${bossNamesToDelete.join(',')}]`);
@@ -82,7 +82,7 @@ export async function updateScheduledBossDeathsWithSpawnBetweenTimes(epochTimeFl
 
   const bossDeathsToUpdate = deaths
     .filter((death: BossDeath) => death.timeNextSpawn >= epochTimeFloor && death.timeNextSpawn <= epochTimeCeil)
-    .filter((death: BossDeath) => BOSS_CONFIG[death.bossName].schedule.length > 0)
+    .filter((death: BossDeath) => !!BOSS_CONFIG[death.bossName].respawn.schedule)
     .map((death: BossDeath) => ({
       ...death,
       timeNextSpawn: calculateNextSpawn(now, BOSS_CONFIG[death.bossName]),
@@ -224,30 +224,37 @@ function createBossDeath(boss: string, killer: string, msSinceDeath: number): Bo
 }
 
 function calculateNextSpawn(deathTime: number, bossConfig: BossConfig): number {
-  const { respawn, schedule, days } = bossConfig;
+  if (bossConfig.respawn.interval) {
+    // Handle interval-based respawn mechanics
+    return deathTime + bossConfig.respawn.interval;
+  } else if (bossConfig.respawn.schedule) {
+    // Handle schedule-based respawn mechanics
+    for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
+      // Shift into UTC+3 so getUTC* methods return game-server-local calendar fields.
+      const shiftedTime = new Date(deathTime + SCHEDULE_TZ_OFFSET + dayOffset * DAY);
 
-  // Handle simplistic respawn mechanics
-  if (respawn) {
-    return deathTime + respawn;
-  }
+      // Map JavaScript's 0-6 day index to your config keys ('SUN' through 'SAT')
+      const dayKey = DAY_KEYS[shiftedTime.getUTCDay()]!;
+      const schedule = bossConfig.respawn.schedule[dayKey];
 
-  for (let dayOffset = 0; dayOffset < 14; dayOffset++) {
-    // Shift into UTC+3 so getUTC* methods return game-server-local calendar fields.
-    const shiftedTime = new Date(deathTime + SCHEDULE_TZ_OFFSET + dayOffset * DAY);
-    if (!days.includes(shiftedTime.getUTCDay())) continue;
+      // If there are no scheduled spawns for this day, skip it
+      if (!schedule || schedule.length === 0) continue;
 
-    for (const time of schedule) {
-      const [hh, mm] = time.split(':').map(n => Number.parseInt(n, 10));
-      // Build wall-clock time in UTC+3, then translate back to a real UTC timestamp.
-      const wallClockUtc = Date.UTC(
-        shiftedTime.getUTCFullYear(),
-        shiftedTime.getUTCMonth(),
-        shiftedTime.getUTCDate(),
-        hh!, mm!,
-      );
-      const respawnCandidateTime = wallClockUtc - SCHEDULE_TZ_OFFSET;
-      if (respawnCandidateTime > deathTime) return respawnCandidateTime;
+      for (const time of schedule) {
+        const [hh, mm] = time.split(':').map(n => Number.parseInt(n, 10));
+        // Build wall-clock time in UTC+3, then translate back to a real UTC timestamp.
+        const wallClockUtc = Date.UTC(
+          shiftedTime.getUTCFullYear(),
+          shiftedTime.getUTCMonth(),
+          shiftedTime.getUTCDate(),
+          hh!, mm!,
+        );
+        const respawnCandidateTime = wallClockUtc - SCHEDULE_TZ_OFFSET;
+        if (respawnCandidateTime > deathTime) return respawnCandidateTime;
+      }
     }
+  } else {
+    throw new Error('Invalid respawn config');
   }
 
   throw new Error('No scheduled spawn found within 14 days.');
