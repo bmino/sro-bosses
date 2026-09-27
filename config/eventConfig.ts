@@ -62,7 +62,7 @@ export const BOSS_CONFIG = defineBosses({
         THUR: ['06:30', '12:30', '18:30'],
         FRI:  ['06:30', '12:30', '18:30'],
         SAT:  ['06:30', '12:30'],
-        SUN:  ['06:30', '12:30'],
+        SUN:  ['06:30', '12:30', '18:30'],
       },
     },
     rewards: [Reward.GC, Reward.SC],
@@ -74,9 +74,9 @@ export const BOSS_CONFIG = defineBosses({
         TUE:  ['06:30', '12:30', '18:30'],
         WED:  ['06:30', '12:30', '18:30'],
         THUR: ['06:30', '12:30', '18:30'],
-        FRI:  ['06:30', '12:30'],
+        FRI:  ['06:30', '12:30', '18:30'],
         SAT:  ['06:30', '12:30'],
-        SUN:  ['06:30', '12:30'],
+        SUN:  ['06:30', '12:30', '18:30'],
       },
     },
     rewards: [Reward.GC, Reward.SC],
@@ -89,7 +89,7 @@ export const BOSS_CONFIG = defineBosses({
         WED:  ['07:30', '14:30', '20:30'],
         THUR: ['07:30', '14:30', '20:30'],
         FRI:  ['07:30', '14:30', '20:30'],
-        SAT:  ['07:30', '14:30'],
+        SAT:  ['07:30', '14:30', '20:30'],
         SUN:  ['07:30', '14:30'],
       },
     },
@@ -109,22 +109,10 @@ export const BOSS_CONFIG = defineBosses({
     },
     rewards: [Reward.GC, Reward.SC],
   },
-  'Haroeris': {
-    respawn: {
-      schedule: {
-        SAT:  ['18:30'],
-      },
-    },
-    rewards: [Reward.GC, Reward.SC],
-  },
-  'Seth': {
-    respawn: {
-      schedule: {
-        SAT:  ['18:30'],
-      },
-    },
-    rewards: [Reward.GC, Reward.SC],
-  },
+  'Haroeris':                   { respawn: { schedule: { SAT: ['18:30'] } }, rewards: [Reward.GC, Reward.SC] },
+  'Seth':                       { respawn: { schedule: { SAT: ['18:30'] } }, rewards: [Reward.GC, Reward.SC] },
+  'Beakyung The White Viper':   { respawn: { schedule: { FRI: ['21:30'] } }, rewards: [Reward.GC, Reward.SC] },
+  'The Roc':                    { respawn: { schedule: { SAT: ['21:30'] } }, rewards: [Reward.GC, Reward.SC] },
 });
 
 export type BossName = keyof typeof BOSS_CONFIG;
