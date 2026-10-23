@@ -53,6 +53,8 @@ export const BOSS_CONFIG = defineBosses({
   'Sylph Wind Element [INT]':          { respawn: { interval:  6.5 * HOUR }, rewards: [Reward.SC, Reward.BC, Reward.LSC] },
   'Undine Water Element[INT]':         { respawn: { interval:  6.5 * HOUR }, rewards: [Reward.SC, Reward.BC, Reward.LSC] },
   'Yul Snake General [STR]':           { respawn: { interval:  7.0 * HOUR }, rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Shadow Beast':                      { respawn: { interval:  6.0 * HOUR }, rewards: [Reward.SC, Reward.BC, Reward.LSC] },
+  'Shadow Master':                     { respawn: { interval: 12.0 * HOUR }, rewards: [Reward.SC, Reward.BC, Reward.LSC] },
   'Selket': {
     respawn: {
       schedule: {
